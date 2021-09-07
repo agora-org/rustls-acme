@@ -9,20 +9,18 @@ use futures::{Future, StreamExt};
 
 pub type TlsStream = async_rustls::server::TlsStream<TcpStream>;
 
-pub async fn bind_listen_serve<A, P, F, Fut>(
-    addrs: A,
+pub async fn bind_listen_serve<P, F, Fut>(
+    listener: TcpListener,
     directory_url: impl AsRef<str>,
     domains: Vec<String>,
     cache_dir: Option<P>,
     f: F,
 ) -> io::Result<()>
 where
-    A: ToSocketAddrs,
     P: AsRef<Path>,
     F: 'static + Sync + Send + Fn(TlsStream) -> Fut,
     Fut: Future<Output = ()> + Send,
 {
-    let listener = TcpListener::bind(addrs).await?;
     let resolver = ResolvesServerCertUsingAcme::new();
     let config = ServerConfig::new(NoClientAuth::new());
     let acceptor = TlsAcceptor::new(config, resolver.clone());
